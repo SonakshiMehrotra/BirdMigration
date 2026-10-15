@@ -1,0 +1,1423 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Visualising Bird Migration in India</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <script src="js/data.js?v=3"></script>
+  <script src="js/india_shapefile.js"></script>
+  <script src="js/sanctuaries.js?v=2"></script>
+  <style>
+    :root{--ink:#13231f;--muted:#61726b;--paper:#f6f3eb;--panel:#fffdfa;--line:#dfe4dd;--water:#dceef0;--teal:#146c63;--gold:#dc9b35;--rose:#c85b55;--violet:#6f6aa8;--shadow:0 12px 38px rgba(22,48,41,.10)}
+    *{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.4 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.app{max-width:1500px;height:100vh;margin:auto;padding:18px 24px}.topbar{height:65px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:14px}h1{font-family:Georgia,serif;font-size:28px;line-height:1.03;margin:0;letter-spacing:-.035em}.sub{margin:4px 0 0;color:var(--muted);max-width:700px;font-size:12px}.method{font-size:11px;color:var(--muted);text-align:right;max-width:300px}.method b{color:var(--ink)}
+    .layout{height:calc(100% - 79px);display:grid;grid-template-columns:290px minmax(0,1fr) 295px;gap:14px;min-height:0;transition:grid-template-columns .2s ease}.layout.detail-collapsed{grid-template-columns:290px minmax(0,1fr)}.layout.detail-collapsed .detail{display:none}.sidebar,.map-card,.detail{background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:14px}.sidebar{padding:16px;min-height:0;overflow:hidden;display:flex;flex-direction:column}.sidebar h2{font-size:12px;text-transform:uppercase;letter-spacing:.1em;margin:0 0 11px}.search{width:100%;border:1px solid #cdd6d0;border-radius:8px;background:#fff;padding:9px 10px;font:inherit;color:inherit;outline-color:var(--teal)}.filter-wrap{margin:10px 0 11px;display:flex;flex-direction:column;gap:4px}.filter-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.group-select{width:100%;border:1px solid #cdd6d0;border-radius:8px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2361726b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;padding:8px 28px 8px 10px;font:inherit;font-size:12px;color:var(--ink);outline-color:var(--teal);appearance:none;-webkit-appearance:none;cursor:pointer;font-weight:600}.group-select:focus{border-color:var(--teal)}.count{color:var(--muted);font-size:11px;margin:0 0 5px}.bird-list{display:grid;gap:2px;overflow:auto;padding-right:2px}.bird{border:0;text-align:left;background:transparent;border-radius:8px;padding:7px 8px;cursor:pointer;color:inherit}.bird:hover,.bird.selected{background:#e7f1ed}.bird-name{font-weight:700;font-size:12px}.bird-sci{font-family:Georgia,serif;color:var(--muted);font-size:11px;font-style:italic}.tag{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--teal);font-weight:700;margin-top:1px}.map-card{overflow:hidden;position:relative;min-height:0}.map-head{padding:15px 17px 10px;display:flex;justify-content:space-between;gap:20px;position:absolute;z-index:3;width:100%;pointer-events:none}.map-head h2{margin:0;font-size:14px}.map-head p{margin:2px 0 0;color:var(--muted);font-size:11px}.map-head-right{text-align:right}.map-head-right b{font-size:19px;font-family:Georgia,serif}.map-note{font-size:10px;color:var(--muted)}#map{width:100%;height:100%;background:var(--water)}.country{fill:#f4f6f0;stroke:#b8c8be;stroke-width:0.75px;vector-effect:non-scaling-stroke}.india-state{fill:none;stroke:#154b35;stroke-width:1.4px;stroke-linejoin:round;vector-effect:non-scaling-stroke;pointer-events:none}.graticule{fill:none;stroke:#cce0e2;stroke-width:0.5px;vector-effect:non-scaling-stroke}.route{fill:none;stroke-linecap:round;stroke-linejoin:round;opacity:.36;cursor:pointer;transition:opacity .2s}.route.focus{opacity:1}.route.dim{opacity:.08}.dot{stroke:#fff}.origin-dot{fill:#13231f;stroke:#fff}.waypoint-dot{stroke:#fff}.bird-dot{cursor:pointer;vector-effect:non-scaling-stroke;stroke:#fff;transition:opacity .2s,r .2s}.bird-dot.dimmed{opacity:.38}.bird-dot.dimmed:hover{opacity:1}.bird-dot.focused{opacity:1;cursor:default}.dot-pulse{pointer-events:none}.label{fill:#52645c;paint-order:stroke;stroke:#fffdfa;stroke-linejoin:round;pointer-events:none;font-weight:600}.tooltip{position:absolute;z-index:5;pointer-events:none;background:#13231f;color:white;padding:8px 10px;border-radius:7px;font-size:12px;box-shadow:0 8px 20px #13231f33;display:none;max-width:240px;line-height:1.35}.legend{position:absolute;bottom:85px;right:12px;z-index:2;background:#fffdfaE8;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:10px;max-height:160px;overflow:auto}.legend-row{display:flex;gap:6px;align-items:center;margin:2px 0}.swatch{width:17px;border-top:3px solid;display:inline-block}.month-marker{position:absolute;left:16px;bottom:85px;background:#fffdfaE8;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:11px}.month-marker strong{color:var(--teal)}
+    .haven-card{background:#f8faf8;border:1px solid #dbe5e0;border-radius:8px;padding:9px 11px;margin-bottom:8px;transition:all .15s ease}
+    .haven-card:hover{background:#edf4f0;border-color:var(--teal)}
+    .haven-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+    .haven-pill{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 6px;border-radius:4px}
+    .primary-pill{background:#e2eee8;color:var(--teal)}
+    .haven-title{font-weight:700;font-size:12px;color:var(--ink);line-height:1.3}
+    .haven-subtitle{font-size:11px;color:var(--muted);margin-top:2px}
+    .secondary-havens-box{margin-top:10px}
+    .secondary-havens-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+    .secondary-count{font-weight:600;text-transform:none;color:var(--teal);font-size:10px}
+    .secondary-havens-pills{display:flex;flex-wrap:wrap;gap:5px}
+    .haven-btn{border:1px solid #d4ded8;background:#fff;border-radius:6px;padding:3px 7px;font:inherit;font-size:11px;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all .15s ease;text-align:left}
+    .haven-btn:hover{background:#e7f1ed;border-color:var(--teal);color:var(--teal)}
+    .haven-btn.active{background:#146c63;color:#fff;border-color:#146c63;box-shadow:0 2px 6px rgba(20,108,99,.25)}
+    .haven-btn.active .haven-btn-state{color:#d2ebe4}
+    .haven-spotlight-card{background:#f3f7f5;border:1px solid #b7d6cb;border-radius:8px;padding:9px 11px;margin-top:8px}
+    .spotlight-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+    .spotlight-top b{font-size:12px;color:var(--ink);line-height:1.3}
+    .spotlight-close{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px;line-height:1}
+    .spotlight-close:hover{color:var(--ink)}
+    .spotlight-tag{font-size:10px;color:var(--teal);font-weight:700;margin-top:2px}
+    .spotlight-desc{font-size:11px;color:#394c44;line-height:1.35;margin-top:4px}
+    .spotlight-dist{font-size:10px;color:var(--muted);margin-top:5px;font-weight:600}
+    .dispersal-route-casing{fill:none;stroke:#fffdfa;stroke-width:5px;opacity:.9;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;vector-effect:non-scaling-stroke}
+    .dispersal-route{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0.1 7.5;stroke-width:3.2px;opacity:.88;pointer-events:stroke;cursor:pointer;vector-effect:non-scaling-stroke;transition:opacity .2s,stroke-width .2s,stroke .2s}
+    .dispersal-route:hover{opacity:1;stroke-width:4.4px;stroke:#dc9b35!important}
+    .dispersal-route.active{opacity:1;stroke-dasharray:0.1 8;stroke-width:4.8px;stroke:#dc9b35!important}
+    .haven-node{cursor:pointer;stroke:#ffffff;stroke-width:1px;vector-effect:non-scaling-stroke;transition:r .2s,stroke-width .2s,fill .2s}
+    .haven-node:hover{stroke:#13231f;stroke-width:2px;fill:#dc9b35}
+    .haven-node.active{fill:#dc9b35;stroke:#13231f;stroke-width:2px}
+    .haven-spotlight-ring{fill:none;stroke:#dc9b35;stroke-width:2px;pointer-events:none}
+    .primary-gateway-ring{fill:none;stroke:var(--teal);stroke-width:1.8px;stroke-dasharray:2 3;pointer-events:none}
+    .map-nav{position:absolute;z-index:6;right:13px;top:78px;display:grid;gap:4px}.map-nav button{width:29px;height:29px;border:1px solid #bdd0c5;border-radius:6px;background:#fffdfae8;color:var(--ink);font:700 17px/1 system-ui;cursor:pointer}.map-nav button.active-toggle{background:#e7f1ed;color:var(--teal);border-color:var(--teal)}.map-nav button:last-child{font-size:13px}.bottom{position:absolute;left:0;right:0;bottom:0;z-index:4;background:#fffdfaf0;border-top:1px solid var(--line);padding:9px 15px 10px}.timeline-top{display:flex;align-items:center;justify-content:space-between;gap:12px}.timeline-top h2{font-size:12px;margin:0}.timeline-top p{color:var(--muted);font-size:10px;margin:0}.play{border:1px solid #b9cbc2;background:#fff;color:var(--teal);border-radius:6px;padding:4px 8px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}.months{margin-top:7px;display:grid;grid-template-columns:repeat(12,1fr);gap:4px}.month{border:0;border-radius:5px;padding:6px 1px;background:#eef0e9;color:#53645e;font:inherit;font-size:10px;cursor:pointer;position:relative}.month:hover{background:#e2eee8}.month.active{background:var(--teal);color:#fff}.month.travel:after{content:"";position:absolute;width:4px;height:4px;border-radius:99px;background:var(--gold);top:3px;right:3px}.month.active:after{background:#fff}.detail{position:relative;grid-column:3;grid-row:1;padding:16px;overflow:auto}.close-detail-btn{position:absolute;top:12px;right:12px;width:26px;height:26px;border:1px solid #bdd0c5;background:#fff;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font:700 13px system-ui;color:var(--muted);transition:all .15s ease;z-index:5}.close-detail-btn:hover{background:#e7f1ed;color:var(--ink);border-color:var(--teal)}.detail-card{padding:0}.detail-card h3{font-family:Georgia,serif;font-size:21px;margin:0 0 2px}.detail-meta{color:var(--muted);font-size:12px;font-style:italic}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}.metric{border-left:2px solid var(--gold);padding-left:8px}.metric span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}.metric b{font-size:12px;word-break:break-word}.route-summary{margin:13px 0;color:#40524a;font-size:12px;line-height:1.45}.data-live{border-top:1px solid var(--line);padding-top:12px;margin-top:14px}.data-live h4{margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.08em}.gbif-status{font-size:11px;color:var(--muted);line-height:1.4}.sources{font-size:11px;color:var(--muted);border-top:1px solid var(--line);margin-top:14px;padding-top:12px}.sources b{color:var(--ink)}.sources ul{padding-left:16px;margin:6px 0}.sources a{color:var(--teal)}.disclaimer{font-size:10px;color:#77857f;margin:6px 0 0}
+    .all-birds-btn{width:100%;border:1px solid #c8d8d0;background:#f3f7f5;border-radius:8px;padding:8px 10px;font:inherit;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;transition:all .18s ease;text-align:left}
+    .all-birds-btn:hover{background:#e7f1ed;border-color:var(--teal);color:var(--teal)}
+    .all-birds-btn.active{background:#146c63;color:#ffffff;border-color:#146c63;box-shadow:0 3px 10px rgba(20,108,99,.25)}
+    .all-birds-btn .btn-badge{font-size:10px;font-weight:700;background:rgba(20,108,99,.12);color:var(--teal);padding:2px 7px;border-radius:99px}
+    .all-birds-btn.active .btn-badge{background:rgba(255,255,255,.25);color:#ffffff}
+    .route.flock-route{opacity:.22;stroke-width:1.0px}
+    .route.flock-route:hover{opacity:.85;stroke-width:2.2px}
+    .bird-dot.flock-member{opacity:.72;stroke:#fff;stroke-width:0.7px}
+    .bird-dot.flock-member:hover{opacity:1}
+    @media(max-width:900px){body{overflow:auto}.app{height:auto;min-height:100vh;padding:18px 14px}.topbar{height:auto;display:block;margin-bottom:14px}.method{text-align:left;margin-top:10px}.layout{height:auto;grid-template-columns:1fr}.sidebar{height:auto;max-height:410px}.bird-list{max-height:220px}.map-card,#map{min-height:500px;height:500px}.detail{grid-column:1;grid-row:auto;max-height:none}.months{gap:3px}.month{font-size:11px}.map-head{padding:14px}.map-head-right{display:none}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <h1>Visualising Bird Migration in India</h1>
+        <p class="sub">Exploring the journeys of migratory birds to and from India</p>
+      </div>
+      <div class="method">
+        <b>Annual Migration Atlas</b><br>
+        <span id="topbarSpeciesCount">126 migratory species</span> · 12-month flyway cycle
+      </div>
+    </header>
+    <section class="layout" aria-label="Bird migration explorer">
+      <aside class="sidebar">
+        <h2>Find a migrant</h2>
+        <button id="viewAllBirdsBtn" class="all-birds-btn active" type="button" title="View synchronized movement of all 126 species across flyways">
+          <span style="display:flex;align-items:center;gap:6px"><span>🌐</span> <span>View All Birds</span></span>
+          <span class="btn-badge">126 Flock</span>
+        </button>
+        <input id="search" class="search" type="search" placeholder="Search common or scientific name" aria-label="Search birds">
+        <div class="filter-wrap">
+          <label for="groupSelect" class="filter-label">Filter by group</label>
+          <select id="groupSelect" class="group-select" aria-label="Filter by bird group">
+            <option value="All">All Birds</option>
+            <option value="Waterfowl">Waterfowl</option>
+            <option value="Waders">Waders</option>
+            <option value="Raptors">Raptors</option>
+            <option value="Songbirds">Songbirds</option>
+            <option value="Cranes & Storks">Cranes & Storks</option>
+            <option value="Seabirds">Seabirds</option>
+            <option value="Flamingos & Pelicans">Flamingos & Pelicans</option>
+            <option value="Monsoon Migrants">Monsoon Migrants</option>
+          </select>
+        </div>
+        <p class="count" id="count"></p>
+        <div class="bird-list" id="birdList" aria-live="polite"></div>
+      </aside>
+      <section class="map-card">
+        <div class="map-head">
+          <div>
+            <h2 id="mapTitle">Migration routes</h2>
+            <p id="mapSub">Select a species to focus route.</p>
+          </div>
+          <div class="map-head-right">
+            <b id="seasonLabel">January 2025</b>
+            <div class="map-note" id="seasonNote">Wintering in India</div>
+          </div>
+        </div>
+        <div id="map"></div>
+        <nav class="map-nav" aria-label="Map navigation">
+          <button id="zoomIn" type="button" aria-label="Zoom in">+</button>
+          <button id="zoomOut" type="button" aria-label="Zoom out">−</button>
+          <button id="zoomHome" type="button" aria-label="Return to India view">⌂</button>
+          <button id="toggleDetail" class="active-toggle" type="button" aria-label="Toggle details panel" title="Toggle bird details panel">ℹ</button>
+        </nav>
+        <div class="month-marker">Showing <strong id="floatingMonth">January 2025</strong></div>
+        <div class="legend" id="mapLegend">
+          <div class="legend-row"><i class="swatch" style="border-color:#0e7568"></i>Waterfowl</div>
+          <div class="legend-row"><i class="swatch" style="border-color:#d48216"></i>Waders</div>
+          <div class="legend-row"><i class="swatch" style="border-color:#b84233"></i>Raptors</div>
+          <div class="legend-row"><i class="swatch" style="border-color:#6f529e"></i>Songbirds</div>
+          <div class="legend-row"><i class="swatch" style="border-color:#38759e"></i>Cranes & Storks</div>
+          <div class="legend-row"><i class="swatch" style="border-color:#195cb0"></i>Seabirds</div>
+          <div class="legend-row"><i class="swatch" style="border-color:#cb4b78"></i>Flamingos & Pelicans</div>
+          <div class="legend-row"><i class="swatch" style="border-color:#4f8222"></i>Monsoon Migrants</div>
+        </div>
+        <div class="tooltip" id="tooltip"></div>
+        <section class="bottom">
+          <div class="timeline-top">
+            <h2>Annual cycle · 2025</h2>
+            <p>Autoplay shows seasonal movement</p>
+            <button class="play" id="play" type="button" aria-pressed="true">❚❚ Pause</button>
+          </div>
+          <div class="months" id="months" role="group" aria-label="Month selector"></div>
+        </section>
+      </section>
+      <section class="detail" id="detailPanel">
+        <button id="closeDetail" class="close-detail-btn" type="button" aria-label="Close details panel" title="Close panel">✕</button>
+        <article class="detail-card">
+          <h3 id="detailName"></h3>
+          <div class="detail-meta" id="detailSci"></div>
+          <div class="detail-grid">
+            <div class="metric"><span>Group</span><b id="detailType"></b></div>
+            <div class="metric"><span>Flyway</span><b id="detailFlyway"></b></div>
+            <div class="metric"><span>IUCN global</span><b id="detailIucn"></b></div>
+            <div class="metric"><span>This month</span><b id="detailPhase"></b></div>
+            <div class="metric"><span>Distance</span><b id="detailDist"></b></div>
+            <div class="metric"><span>Max Altitude</span><b id="detailAlt"></b></div>
+            <div class="metric"><span>Role</span><b id="detailRole"></b></div>
+            <div class="metric"><span>Tracking data</span><b id="detailProvenance"></b></div>
+          </div>
+          <p class="route-summary" id="detailSummary"></p>
+          <div class="data-live">
+            <h4>Breeding ground</h4>
+            <div id="detailBreed"></div>
+            <h4 style="margin-top:12px">Wintering Network in India</h4>
+            <div class="haven-card" id="detailPrimaryHaven" title="Click to zoom to primary haven on map">
+              <div class="haven-header">
+                <span class="haven-pill primary-pill">⭐ Primary Gateway</span>
+              </div>
+              <div class="haven-title" id="primaryHavenName"></div>
+              <div class="haven-subtitle" id="primaryHavenState"></div>
+            </div>
+            <div class="secondary-havens-box" id="secondaryHavensContainer">
+              <div class="secondary-havens-label">
+                <span>Dispersal & Secondary Havens</span>
+                <span class="secondary-count" id="secondaryHavensCount"></span>
+              </div>
+              <div class="secondary-havens-pills" id="detailSecondaryHavens"></div>
+            </div>
+            <h4 style="margin-top:12px">GBIF · 2025 occurrences</h4>
+            <div class="gbif-status" id="gbifStatus">Looking up open occurrence count…</div>
+          </div>
+        </article>
+        <aside class="detail-card sources">
+          <b>Eligible open-data sources</b>
+          <ul>
+            <li><a href="https://datarepository.movebank.org" target="_blank">Movebank Data Repository</a> — GPS and Argos satellite tracking studies published under open reuse licences.</li>
+            <li><a href="https://www.gbif.org/occurrence/search?basis_of_record=HUMAN_OBSERVATION" target="_blank">GBIF Occurrence API</a> — georeferenced records for Taxon: Aves (212) with CC0 / CC BY licensing.</li>
+            <li><a href="https://zsi.gov.in" target="_blank">ZSI & BNHS</a> — historical Indian flyway banding recoveries and seasonal ringing inventories.</li>
+          </ul>
+          <p class="disclaimer">Routes are georeferenced great-circle corridors connecting verified breeding grounds, staging stopovers, and Indian wintering destinations, sourced from Movebank and GBIF open datasets.</p>
+        </aside>
+      </section>
+    </section>
+  </main>
+
+  <script>
+  const C = {
+    'Waterfowl': '#0e7568',
+    'Waders': '#d48216',
+    'Raptors': '#b84233',
+    'Songbirds': '#6f529e',
+    'Cranes & Storks': '#38759e',
+    'Seabirds': '#195cb0',
+    'Flamingos & Pelicans': '#cb4b78',
+    'Monsoon Migrants': '#4f8222'
+  };
+
+  const GROUP_MAP = {
+    'waterfowl': 'Waterfowl',
+    'wader': 'Waders',
+    'raptor': 'Raptors',
+    'passerine': 'Songbirds',
+    'crane_stork': 'Cranes & Storks',
+    'gull_tern': 'Seabirds',
+    'flamingo_pelican': 'Flamingos & Pelicans',
+    'monsoon': 'Monsoon Migrants'
+  };
+
+  const IUCN_MAP = {
+    'LC': 'Least Concern (LC)',
+    'NT': 'Near Threatened (NT)',
+    'VU': 'Vulnerable (VU)',
+    'EN': 'Endangered (EN)',
+    'CR': 'Critically Endangered (CR)'
+  };
+
+  const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MONTH_NAMES = [
+    'January','February','March','April','May','June',
+    'July','August','September','October','November','December'
+  ];
+
+  function calculateGeodesicArc(startLat, startLng, endLat, endLng, numSteps = 16) {
+    const pts = [];
+    const lat1 = startLat * Math.PI / 180;
+    const lon1 = startLng * Math.PI / 180;
+    const lat2 = endLat * Math.PI / 180;
+    const lon2 = endLng * Math.PI / 180;
+
+    const d = 2 * Math.asin(Math.sqrt(
+      Math.pow(Math.sin((lat1 - lat2) / 2), 2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin((lon1 - lon2) / 2), 2)
+    ));
+
+    if (d === 0) return [[startLng, startLat]];
+
+    for (let f = 0; f <= 1; f += 1 / numSteps) {
+      const A = Math.sin((1 - f) * d) / Math.sin(d);
+      const B = Math.sin(f * d) / Math.sin(d);
+      const x = A * Math.cos(lat1) * Math.cos(lon1) + B * Math.cos(lat2) * Math.cos(lon2);
+      const y = A * Math.cos(lat1) * Math.sin(lon1) + B * Math.cos(lat2) * Math.sin(lon2);
+      const z = A * Math.sin(lat1) + B * Math.sin(lat2);
+
+      const arcLat = Math.atan2(z, Math.sqrt(x * x + y * y)) * 180 / Math.PI;
+      const arcLng = Math.atan2(y, x) * 180 / Math.PI;
+      const curveHeight = Math.sin(f * Math.PI) * 0.9;
+      pts.push([arcLng, arcLat + curveHeight]);
+    }
+    return pts;
+  }
+
+  function buildBirdRoute(b) {
+    const waypoints = [b.origin, ...(b.stopovers || []), b.destination];
+    const detailedPoints = [];
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const p1 = waypoints[i];
+      const p2 = waypoints[i + 1];
+      const seg = calculateGeodesicArc(p1.lat, p1.lng, p2.lat, p2.lng, 16);
+      if (i > 0) seg.shift();
+      detailedPoints.push(...seg);
+    }
+    return detailedPoints;
+  }
+
+  // Transform raw BIRDS_DATA into explorer-compatible objects
+  const rawList = (typeof BIRDS_DATA !== 'undefined' && Array.isArray(BIRDS_DATA)) ? BIRDS_DATA : [];
+  const birds = rawList.map(raw => {
+    const groupName = GROUP_MAP[raw.group] || 'Waterfowl';
+    const route = buildBirdRoute(raw);
+    const iucnFull = IUCN_MAP[raw.iucn] || raw.iucn || 'Least Concern';
+    const sumText = raw.feat ? `${raw.feat} ${raw.timeline && raw.timeline.summary ? '— ' + raw.timeline.summary : ''}` : (raw.timeline && raw.timeline.summary) || '';
+    
+    // Map monthly status phases
+    const phases = MONTH_NAMES.map(mName => {
+      const ms = raw.timeline && raw.timeline.monthlyStatus && raw.timeline.monthlyStatus[mName];
+      if (!ms) return 'In transit';
+      return `${ms.phase}${ms.location ? ' · ' + ms.location : ''}`;
+    });
+
+    function getBirdSecondaryHavens(rawObj) {
+      if (typeof SANCTUARIES_DATA === 'undefined' || !Array.isArray(SANCTUARIES_DATA)) return [];
+      const indianHub = (rawObj.destination && rawObj.destination.lat >= 6 && rawObj.destination.lat <= 38 && rawObj.destination.lng >= 68 && rawObj.destination.lng <= 98)
+        ? rawObj.destination
+        : (rawObj.stopovers && rawObj.stopovers.find(s => s.lat >= 6 && s.lat <= 38 && s.lng >= 68 && s.lng <= 98)) || rawObj.destination;
+      if (!indianHub || indianHub.lat === undefined) return [];
+      return SANCTUARIES_DATA.filter(s => {
+        if (!s.birdIds || !s.birdIds.includes(rawObj.id)) return false;
+        const d = d3.geoDistance([indianHub.lng, indianHub.lat], [s.lng, s.lat]) * 6371;
+        return d > 35;
+      });
+    }
+
+    return {
+      id: raw.id,
+      n: raw.name,
+      s: raw.scientific,
+      t: groupName,
+      groupId: raw.group,
+      f: raw.flyway || 'Central Asian Flyway',
+      sum: sumText,
+      p: route,
+      ph: phases,
+      iucn: iucnFull,
+      breed: `${raw.origin.name}${raw.origin.country ? ' (' + raw.origin.country + ')' : ''}`,
+      dest: `${raw.destination.name}${raw.destination.state ? ' (' + raw.destination.state + ')' : ''}`,
+      rawOrigin: raw.origin,
+      rawDest: raw.destination,
+      stopovers: raw.stopovers || [],
+      distanceKm: raw.distanceKm || 0,
+      peakAltitudeM: raw.peakAltitudeM || 0,
+      role: raw.role || 'Wintering Visitor',
+      provenance: raw.provenance || 'Movebank GPS Telemetry',
+      movebankId: raw.movebankId || '',
+      gbifId: raw.gbifId || '',
+      timeline: raw.timeline || {},
+      secondaryHavens: getBirdSecondaryHavens(raw),
+      color: C[groupName] || raw.color || '#146c63'
+    };
+  });
+
+  if (document.getElementById('topbarSpeciesCount')) {
+    document.getElementById('topbarSpeciesCount').textContent = `${birds.length} migratory species`;
+  }
+
+  let selected = null;
+  let month = 0;
+  let type = 'All';
+  const search = document.getElementById('search');
+  const list = document.getElementById('birdList');
+
+  function visible() {
+    const q = search.value.trim().toLowerCase();
+    return birds.filter(b => {
+      const matchType = (type === 'All' || b.t === type || (type === 'Waterfowl' && b.t === 'Waterfowl') || (type === 'Waders' && b.t === 'Waders') || (type === 'Raptors' && b.t === 'Raptors') || (type === 'Songbirds' && b.t === 'Songbirds') || (type === 'Cranes & Storks' && b.t === 'Cranes & Storks') || (type === 'Seabirds' && b.t === 'Seabirds') || (type === 'Flamingos & Pelicans' && b.t === 'Flamingos & Pelicans') || (type === 'Monsoon Migrants' && b.t === 'Monsoon Migrants'));
+      const matchQuery = !q || (`${b.n} ${b.s}`).toLowerCase().includes(q);
+      return matchType && matchQuery;
+    });
+  }
+
+  function renderList() {
+    const v = visible();
+    document.getElementById('count').textContent = `${v.length} of ${birds.length} migratory species`;
+    const allBirdsBtn = document.getElementById('viewAllBirdsBtn');
+    if (allBirdsBtn) {
+      if (!selected && type === 'All') {
+        allBirdsBtn.classList.add('active');
+      } else {
+        allBirdsBtn.classList.remove('active');
+      }
+    }
+    list.innerHTML = v.map(b => `
+      <button class="bird ${b === selected ? 'selected' : ''}" data-name="${b.n}">
+        <div class="bird-name">${b.n}</div>
+        <div class="bird-sci">${b.s}</div>
+        <div class="tag">${b.t}</div>
+      </button>
+    `).join('') || '<p class="count" style="padding:10px 4px">No matching birds.</p>';
+
+    list.querySelectorAll('.bird').forEach(el => {
+      el.onclick = () => {
+        const found = birds.find(b => b.n === el.dataset.name);
+        if (found) {
+          if (selected === found) {
+            viewAllBirds();
+          } else {
+            selectBird(found);
+          }
+        }
+      };
+    });
+  }
+
+  function selectBird(b) {
+    selected = b;
+    activeHavenId = null;
+    // Immediately stop other birds' animation when inspecting a specific bird
+    if (playing) {
+      playing = false;
+      autoplay();
+    }
+    if (typeof setDetailCollapsed === 'function') {
+      setDetailCollapsed(false);
+    }
+    renderList();
+    renderMonths();
+    renderDetails();
+    draw();
+  }
+
+  function viewAllBirds() {
+    selected = null;
+    activeHavenId = null;
+    type = 'All';
+    if (groupSelect) groupSelect.value = 'All';
+    renderList();
+    renderMonths();
+    renderDetails();
+    draw();
+    if (!playing) {
+      playing = true;
+      autoplay();
+    }
+  }
+
+  const viewAllBirdsBtn = document.getElementById('viewAllBirdsBtn');
+  if (viewAllBirdsBtn) {
+    viewAllBirdsBtn.onclick = () => {
+      viewAllBirds();
+    };
+  }
+
+  const groupSelect = document.getElementById('groupSelect');
+  if (groupSelect) {
+    groupSelect.onchange = () => {
+      type = groupSelect.value;
+      if (selected && type !== 'All' && selected.t !== type) {
+        selected = null;
+      }
+      renderList();
+      renderDetails();
+      draw();
+    };
+  }
+
+  search.oninput = renderList;
+
+  function getBirdMonthPathIndex(b, monthIdx) {
+    if (!b || !b.p || b.p.length === 0) return 0;
+    const monthName = MONTH_NAMES[monthIdx];
+    const ms = b.timeline && b.timeline.monthlyStatus && b.timeline.monthlyStatus[monthName];
+    if (!ms) {
+      return b.p.length - 1;
+    }
+    const prog = Math.max(0, Math.min(1, ms.routeProgress !== undefined ? ms.routeProgress : 1.0));
+    // Index 0 is Origin, last index is Destination
+    return Math.min(b.p.length - 1, Math.max(0, Math.round(prog * (b.p.length - 1))));
+  }
+
+  function getBirdMonthPos(b, monthIdx) {
+    if (!b || !b.p || b.p.length === 0) return [78, 22];
+    const idx = getBirdMonthPathIndex(b, monthIdx);
+    return b.p[idx] || b.p[b.p.length - 1];
+  }
+
+  function isBirdInTravel(b, monthIdx) {
+    if (!b || !b.timeline || !b.timeline.monthlyStatus) {
+      return ['Mar','Apr','Sep','Oct'].includes(M[monthIdx]);
+    }
+    const ms = b.timeline.monthlyStatus[MONTH_NAMES[monthIdx]];
+    if (!ms) return false;
+    const p = ms.phase || '';
+    return p.includes('Transit') || p.includes('Departure') || p.includes('Arrival') || p.includes('Journey');
+  }
+
+  function renderMonths() {
+    document.getElementById('months').innerHTML = M.map((x, i) => {
+      const isTravel = selected ? isBirdInTravel(selected, i) : ['Mar','Apr','May','Aug','Sep','Oct'].includes(x);
+      return `<button class="month ${i === month ? 'active' : ''} ${isTravel ? 'travel' : ''}" data-i="${i}" title="${MONTH_NAMES[i]}">${x}</button>`;
+    }).join('');
+
+    document.querySelectorAll('.month').forEach(b => {
+      b.onclick = () => {
+        month = +b.dataset.i;
+        renderMonths();
+        renderDetails();
+        if (svgContent && !svgContent.select('.flock-layer').empty()) {
+          updateFlockPositions(true);
+        } else {
+          draw();
+        }
+      };
+    });
+  }
+
+  async function getGbifCount() {
+    const out = document.getElementById('gbifStatus');
+    if (!selected) return;
+    out.textContent = 'Looking up open occurrence count…';
+    try {
+      const url = 'https://api.gbif.org/v1/occurrence/search?scientificName=' + encodeURIComponent(selected.s) + '&year=2025&hasCoordinate=true&limit=0';
+      const r = await fetch(url);
+      if (!r.ok) throw new Error();
+      const data = await r.json();
+      if (selected.s !== document.getElementById('detailSci').textContent) return;
+      out.innerHTML = `<b>${Number(data.count).toLocaleString()}</b> georeferenced 2025 records returned by GBIF. <a href="https://www.gbif.org/occurrence/search?scientific_name=${encodeURIComponent(selected.s)}&year=2025&has_coordinate=true" target="_blank">Open records ↗</a>`;
+    } catch(e) {
+      out.innerHTML = `Live GBIF count unavailable. <a href="https://www.gbif.org/occurrence/search?scientific_name=${encodeURIComponent(selected.s)}" target="_blank">Search ${selected.s} on GBIF ↗</a>`;
+    }
+  }
+
+  function renderDetails() {
+    const allBirdsBtn = document.getElementById('viewAllBirdsBtn');
+    if (allBirdsBtn) {
+      if (!selected) {
+        allBirdsBtn.classList.add('active');
+      } else {
+        allBirdsBtn.classList.remove('active');
+      }
+    }
+
+    if (!selected) {
+      // -------------------------------------------------------------
+      // ALL BIRDS / FLOCK OVERVIEW DETAILS
+      // -------------------------------------------------------------
+      document.getElementById('detailName').textContent = 'All Migratory Species';
+      document.getElementById('detailSci').textContent = 'Pan-Eurasian & Central Asian Flyways Collective';
+      document.getElementById('detailType').textContent = type === 'All' ? '126 Species (8 Groups)' : `${type} Group`;
+      document.getElementById('detailFlyway').textContent = 'Central Asian & East Asian Flyways';
+      document.getElementById('detailIucn').textContent = '126 Species Cataloged';
+
+      const curMonthName = MONTH_NAMES[month];
+      let collectivePhase = 'Winter Sanctuary Aggregation';
+      if (['March', 'April', 'May'].includes(curMonthName)) {
+        collectivePhase = 'Northbound Trans-Himalayan Return';
+      } else if (['June', 'July'].includes(curMonthName)) {
+        collectivePhase = 'Eurasian Breeding & Arctic Nesting';
+      } else if (['August', 'September', 'October'].includes(curMonthName)) {
+        collectivePhase = 'Southbound Trans-Continental Influx';
+      } else if (['November', 'December', 'January', 'February'].includes(curMonthName)) {
+        collectivePhase = 'Peninsular Wintering & Feeding';
+      }
+      document.getElementById('detailPhase').textContent = collectivePhase;
+
+      const distEl = document.getElementById('detailDist');
+      if (distEl) distEl.textContent = '1,200 – 11,500 km';
+      const altEl = document.getElementById('detailAlt');
+      if (altEl) altEl.textContent = 'Up to 7,290 m';
+      const roleEl = document.getElementById('detailRole');
+      if (roleEl) roleEl.textContent = 'Synchronized Multi-Species Influx';
+      const provEl = document.getElementById('detailProvenance');
+      if (provEl) provEl.textContent = 'Movebank GPS Telemetry + GBIF';
+
+      document.getElementById('detailSummary').textContent = 
+        'Visualizing 126 migratory species simultaneously navigating between Arctic tundras, Siberian taiga, Central Asian steppes, and Indian wetland sanctuaries. Use the timeline below to observe synchronized continental movements, or click any species in the left list to isolate its route and key stopovers.';
+
+      document.getElementById('detailBreed').innerHTML = '<span style="color:#61726b">Spanning Siberia, Mongolia, Kazakhstan, Tibetan Plateau, and Northern Europe.</span>';
+
+      const primNameEl = document.getElementById('primaryHavenName');
+      const primStateEl = document.getElementById('primaryHavenState');
+      if (primNameEl) primNameEl.textContent = 'Pan-India Wetland & Forest Network';
+      if (primStateEl) primStateEl.textContent = '23 Key Protected Sanctuaries Across India';
+
+      const primCard = document.getElementById('detailPrimaryHaven');
+      if (primCard) {
+        primCard.onclick = () => mapZoom && mapZoom.svg.transition().duration(260).call(mapZoom.zoom.transform, mapZoom.home);
+        primCard.style.cursor = 'pointer';
+      }
+
+      const secContainer = document.getElementById('secondaryHavensContainer');
+      if (secContainer) secContainer.style.display = 'none';
+
+      document.getElementById('gbifStatus').textContent = 'Tracking 126 species across 23 national sanctuaries.';
+
+      document.getElementById('seasonLabel').textContent = M[month] + ' 2025';
+      document.getElementById('seasonNote').textContent = collectivePhase;
+      document.getElementById('floatingMonth').textContent = M[month] + ' 2025';
+      const count = type === 'All' ? birds.length : birds.filter(b => b.t === type).length;
+      document.getElementById('mapTitle').textContent = type === 'All' ? 'All Migratory Species' : `${type} Migration`;
+      document.getElementById('mapSub').textContent = type === 'All'
+        ? `Simultaneous continental movement of ${birds.length} birds across flyways`
+        : `Simultaneous continental movement of ${count} ${type.toLowerCase()} across flyways`;
+      return;
+    }
+
+    // -------------------------------------------------------------
+    // SPECIFIC BIRD DETAILS
+    // -------------------------------------------------------------
+    const phase = selected.ph[month] || selected.ph[selected.ph.length - 1];
+    
+    document.getElementById('detailName').textContent = selected.n;
+    document.getElementById('detailSci').textContent = selected.s;
+    document.getElementById('detailType').textContent = selected.t;
+    document.getElementById('detailFlyway').textContent = selected.f;
+    document.getElementById('detailIucn').textContent = selected.iucn;
+    document.getElementById('detailPhase').textContent = phase;
+    
+    const distEl = document.getElementById('detailDist');
+    if (distEl) distEl.textContent = selected.distanceKm ? `${selected.distanceKm.toLocaleString()} km` : '—';
+    
+    const altEl = document.getElementById('detailAlt');
+    if (altEl) altEl.textContent = selected.peakAltitudeM ? `${selected.peakAltitudeM.toLocaleString()} m` : '—';
+
+    const roleEl = document.getElementById('detailRole');
+    if (roleEl) roleEl.textContent = selected.role;
+
+    const provEl = document.getElementById('detailProvenance');
+    if (provEl) {
+      if (selected.movebankId) {
+        provEl.innerHTML = `${selected.provenance} <span style="display:block;font-size:10px;font-weight:400;color:var(--ink-muted);margin-top:2px">${selected.movebankId}</span>`;
+      } else {
+        provEl.textContent = selected.provenance;
+      }
+    }
+
+    document.getElementById('detailSummary').textContent = selected.sum;
+    document.getElementById('detailBreed').textContent = selected.breed;
+    
+    // Primary haven in India
+    const isDestOutsideIndia = (selected.rawDest && (selected.rawDest.lat < 6 || selected.rawDest.lat > 38 || selected.rawDest.lng < 68 || selected.rawDest.lng > 98));
+    const indianPrimaryHub = isDestOutsideIndia
+      ? (selected.stopovers && selected.stopovers.find(s => s.lat >= 6 && s.lat <= 38 && s.lng >= 68 && s.lng <= 98))
+      : selected.rawDest;
+
+    const primNameEl = document.getElementById('primaryHavenName');
+    const primStateEl = document.getElementById('primaryHavenState');
+    if (primNameEl) {
+      primNameEl.textContent = indianPrimaryHub ? indianPrimaryHub.name : (selected.rawDest.name || selected.dest);
+    }
+    if (primStateEl) {
+      if (isDestOutsideIndia) {
+        primStateEl.textContent = 'Nagaland · Flagship Staging Epicenter';
+      } else {
+        primStateEl.textContent = selected.rawDest.state ? `${selected.rawDest.state} · Flagship Arrival Hub` : 'Flagship Arrival Hub';
+      }
+    }
+
+    const primCard = document.getElementById('detailPrimaryHaven');
+    if (primCard && indianPrimaryHub && indianPrimaryHub.lat !== undefined) {
+      primCard.onclick = () => zoomToHaven(indianPrimaryHub.lng, indianPrimaryHub.lat);
+      primCard.style.cursor = 'pointer';
+    }
+
+    // Secondary havens & dispersal network
+    renderSecondaryHavensUI();
+
+    document.getElementById('seasonLabel').textContent = M[month] + ' 2025';
+    document.getElementById('seasonNote').textContent = phase;
+    document.getElementById('floatingMonth').textContent = M[month] + ' 2025';
+    document.getElementById('mapTitle').textContent = selected.n;
+    document.getElementById('mapSub').textContent = selected.t;
+    
+    getGbifCount();
+  }
+
+  let activeHavenId = null;
+
+  function spotlightHaven(s) {
+    if (activeHavenId === s.id) {
+      activeHavenId = null;
+    } else {
+      activeHavenId = s.id;
+    }
+    renderSecondaryHavensUI();
+    draw();
+  }
+
+  function dismissHavenSpotlight() {
+    activeHavenId = null;
+    renderSecondaryHavensUI();
+    draw();
+  }
+
+  function renderSecondaryHavensUI() {
+    const secContainer = document.getElementById('secondaryHavensContainer');
+    const secList = document.getElementById('detailSecondaryHavens');
+    const secCount = document.getElementById('secondaryHavensCount');
+    if (!secList || !selected) return;
+
+    secList.innerHTML = '';
+    const havens = selected.secondaryHavens || [];
+    if (secCount) secCount.textContent = havens.length > 0 ? `(${havens.length} key sanctuaries)` : '';
+
+    if (havens.length === 0) {
+      if (secContainer) secContainer.style.display = 'none';
+      return;
+    }
+    if (secContainer) secContainer.style.display = 'block';
+
+    const pillBox = document.createElement('div');
+    pillBox.className = 'secondary-havens-pills';
+    havens.forEach(s => {
+      const btn = document.createElement('button');
+      const isActive = (activeHavenId === s.id);
+      btn.className = `haven-btn ${isActive ? 'active' : ''}`;
+      btn.type = 'button';
+      btn.innerHTML = `<span>${s.icon || '📍'}</span> <b>${s.name}</b> <span class="haven-btn-state">(${s.state})</span>`;
+      btn.title = `Click to view sanctuary info and highlight on map`;
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        spotlightHaven(s);
+      };
+      pillBox.appendChild(btn);
+    });
+    secList.appendChild(pillBox);
+
+    // If a haven is active, render the informative Spotlight Card
+    if (activeHavenId) {
+      const activeS = havens.find(s => s.id === activeHavenId);
+      if (activeS) {
+        let distText = '';
+        if (selected.rawDest && selected.rawDest.lat !== undefined) {
+          const d = d3.geoDistance([selected.rawDest.lng, selected.rawDest.lat], [activeS.lng, activeS.lat]) * 6371;
+          distText = `~${Math.round(d).toLocaleString()} km from ${selected.rawDest.name || 'flagship gateway'}`;
+        }
+        const card = document.createElement('div');
+        card.className = 'haven-spotlight-card';
+        card.innerHTML = `
+          <div class="spotlight-top">
+            <b>${activeS.icon || '📍'} ${activeS.name}</b>
+            <button class="spotlight-close" type="button" title="Close info" aria-label="Close info">✕</button>
+          </div>
+          <div class="spotlight-tag">${activeS.state} · ${activeS.type || 'Winter Sanctuary'}</div>
+          <div class="spotlight-desc">${activeS.desc || 'Crucial seasonal wintering refuge.'}</div>
+          ${distText ? `<div class="spotlight-dist">📍 ${distText}</div>` : ''}
+        `;
+        card.querySelector('.spotlight-close').onclick = (e) => {
+          e.stopPropagation();
+          dismissHavenSpotlight();
+        };
+        secList.appendChild(card);
+      }
+    }
+  }
+
+  function zoomToHaven(lng, lat) {
+    if (!mapZoom || !currentProjection) return;
+    const pt = currentProjection([lng, lat]);
+    if (!pt) return;
+    const w = (mapZoom.svg.node() && mapZoom.svg.node().clientWidth) || 900;
+    const h = (mapZoom.svg.node() && mapZoom.svg.node().clientHeight) || 650;
+    const targetK = 3.65;
+    const transform = d3.zoomIdentity.translate(w / 2 - pt[0] * targetK, h / 2 - pt[1] * targetK).scale(targetK);
+    mapZoom.svg.transition().duration(600).call(mapZoom.zoom.transform, transform);
+  }
+
+  function fixGeoWinding(fc) {
+    if (!fc || !fc.features) return fc;
+    fc.features.forEach(f => {
+      try {
+        if (d3.geoArea(f) > 2 * Math.PI) {
+          const geom = f.geometry;
+          if (!geom) return;
+          if (geom.type === 'Polygon') {
+            geom.coordinates.forEach(r => r.reverse());
+          } else if (geom.type === 'MultiPolygon') {
+            geom.coordinates.forEach(poly => poly.forEach(r => r.reverse()));
+          }
+        }
+      } catch(err) {}
+    });
+    return fc;
+  }
+
+  let world, indiaGeo;
+  async function load() {
+    try {
+      if (typeof INDIA_SHAPEFILE_GEOJSON !== 'undefined') {
+        indiaGeo = fixGeoWinding(INDIA_SHAPEFILE_GEOJSON);
+      } else {
+        const raw = await d3.json('data/india_states.geojson').catch(() => null);
+        indiaGeo = fixGeoWinding(raw);
+      }
+    } catch(e) {}
+    try {
+      world = await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+      draw();
+    } catch(e) {
+      document.getElementById('map').innerHTML = '<p style="padding:100px 24px;color:#61726b">Map boundaries could not load. The route data remains available in this file.</p>';
+    }
+  }
+
+  function formatPlaceLabel(raw) {
+    if (!raw || !raw.name) return '';
+    const name = raw.name.trim();
+    if (name.includes('&')) {
+      const parts = name.split('&').map(p => p.trim());
+      if (['Central', 'Eastern', 'Western', 'Siberian', 'Amur', 'Sayan', 'Northern', 'Throughout Peninsular India'].includes(parts[0])) {
+        return name;
+      }
+      if (parts[0].length >= 4 && parts[0].length <= 26) {
+        return parts[0];
+      }
+    }
+    return name;
+  }
+
+  let mapZoom, currentTransform, svgContent, currentProjection, currentK = 2.35;
+
+  function draw() {
+    if (!world) return;
+    const box = document.getElementById('map');
+    const w = box.clientWidth;
+    const h = box.clientHeight;
+    d3.select('#map').selectAll('*').remove();
+
+    const svg = d3.select('#map')
+      .append('svg')
+      .attr('viewBox', `0 0 ${w} ${h}`)
+      .attr('width', '100%')
+      .attr('height', '100%');
+
+    // Clicking anywhere on map ocean/background deselects bird and returns to flock view
+    svg.on('click', (ev) => {
+      const tag = ev.target.tagName;
+      const cl = ev.target.classList;
+      if (tag === 'svg' || (cl && (cl.contains('country') || cl.contains('graticule') || cl.contains('india-state')))) {
+        if (selected) {
+          viewAllBirds();
+        }
+      }
+    });
+
+    const projection = d3.geoNaturalEarth1().rotate([-78, 0]).fitExtent([[22, 56], [w - 22, h - 30]], { type: 'Sphere' });
+    const path = d3.geoPath(projection);
+    const content = svg.append('g');
+    svgContent = content;
+    currentProjection = projection;
+
+    // Graticule & Countries
+    content.append('path')
+      .datum(d3.geoGraticule10())
+      .attr('class', 'graticule')
+      .attr('d', path);
+
+    content.append('g')
+      .selectAll('path')
+      .data(topojson.feature(world, world.objects.countries).features)
+      .join('path')
+      .attr('class', 'country')
+      .attr('d', path);
+
+    // India State Boundaries Overlay
+    if (indiaGeo && indiaGeo.features) {
+      content.append('g')
+        .attr('class', 'india-boundaries')
+        .selectAll('path')
+        .data(indiaGeo.features)
+        .join('path')
+        .attr('class', 'india-state')
+        .attr('d', path);
+    }
+
+    // Routes
+    const all = content.append('g');
+    const lineGen = d3.line().curve(d3.curveCatmullRom.alpha(0.5));
+
+    // Draw unselected / background routes first
+    birds.forEach(b => {
+      if (b === selected) return;
+      if (type !== 'All' && b.t !== type) return;
+      const coords = b.p.map(pt => projection(pt)).filter(Boolean);
+      if (coords.length < 2) return;
+      all.append('path')
+        .attr('class', `route ${selected ? 'dim' : 'flock-route'}`)
+        .attr('stroke', b.color || C[b.t] || '#146c63')
+        .attr('d', lineGen(coords))
+        .on('mouseenter', (ev) => {
+          const tt = document.getElementById('tooltip');
+          tt.style.display = 'block';
+          tt.innerHTML = `<b>${b.n}</b><br><span style="font-size:11px;opacity:0.85">${b.s}</span><br><span style="font-size:10px;color:#dc9b35">${b.t}</span>`;
+          tt.style.left = (ev.offsetX + 12) + 'px';
+          tt.style.top = (ev.offsetY + 12) + 'px';
+        })
+        .on('mouseleave', () => {
+          document.getElementById('tooltip').style.display = 'none';
+        })
+        .on('click', (ev) => {
+          ev.stopPropagation();
+          selectBird(b);
+        });
+    });
+
+    // Draw focused selected route on top
+    if (selected) {
+      const coords = selected.p.map(pt => projection(pt)).filter(Boolean);
+      if (coords.length >= 2) {
+        all.append('path')
+          .attr('class', 'route focus')
+          .attr('stroke', selected.color || C[selected.t] || '#146c63')
+          .attr('d', lineGen(coords));
+      }
+
+      // Origin dot & label
+      if (selected.rawOrigin && selected.rawOrigin.lat !== undefined) {
+        const originCoord = projection([selected.rawOrigin.lng, selected.rawOrigin.lat]);
+        if (originCoord) {
+          content.append('circle')
+            .attr('class', 'waypoint-dot')
+            .attr('fill', '#13231f')
+            .attr('cx', originCoord[0])
+            .attr('cy', originCoord[1])
+            .attr('r', 3.5);
+          content.append('text')
+            .attr('class', 'label')
+            .attr('data-base-x', originCoord[0])
+            .attr('data-base-y', originCoord[1])
+            .attr('data-dx', 11)
+            .attr('data-dy', 3.5)
+            .text(formatPlaceLabel(selected.rawOrigin));
+        }
+      }
+
+      // Stopover dots
+      if (selected.stopovers && selected.stopovers.length > 0) {
+        selected.stopovers.forEach(st => {
+          const stCoord = projection([st.lng, st.lat]);
+          if (stCoord) {
+            content.append('circle')
+              .attr('class', 'waypoint-dot')
+              .attr('fill', '#dc9b35')
+              .attr('cx', stCoord[0])
+              .attr('cy', stCoord[1])
+              .attr('r', 2.8);
+
+            if (st.name && st.name.includes('Doyang')) {
+              content.append('text')
+                .attr('class', 'label')
+                .attr('data-base-x', stCoord[0])
+                .attr('data-base-y', stCoord[1])
+                .attr('data-dx', 11)
+                .attr('data-dy', 3.5)
+                .text('Doyang Reservoir (Nagaland)');
+            }
+          }
+        });
+      }
+
+      // Destination dot in India & label
+      if (selected.rawDest && selected.rawDest.lat !== undefined) {
+        const destCoord = projection([selected.rawDest.lng, selected.rawDest.lat]);
+        if (destCoord) {
+          content.append('circle')
+            .attr('class', 'waypoint-dot')
+            .attr('fill', '#146c63')
+            .attr('cx', destCoord[0])
+            .attr('cy', destCoord[1])
+            .attr('r', 3.8);
+          content.append('text')
+            .attr('class', 'label')
+            .attr('data-base-x', destCoord[0])
+            .attr('data-base-y', destCoord[1])
+            .attr('data-dx', 11)
+            .attr('data-dy', 3.5)
+            .text(formatPlaceLabel(selected.rawDest));
+        }
+      }
+
+      // -------------------------------------------------------------
+      // OPTION A: SECONDARY DISPERSAL HAVENS & NETWORK ACROSS INDIA
+      // -------------------------------------------------------------
+      if (selected.secondaryHavens && selected.secondaryHavens.length > 0) {
+        const dispersalLayer = content.append('g').attr('class', 'dispersal-layer');
+        const indianHub = (selected.rawDest && selected.rawDest.lat >= 6 && selected.rawDest.lat <= 38 && selected.rawDest.lng >= 68 && selected.rawDest.lng <= 98)
+          ? selected.rawDest
+          : (selected.stopovers && selected.stopovers.find(s => s.lat >= 6 && s.lat <= 38 && s.lng >= 68 && s.lng <= 98)) || selected.rawDest;
+        const p1 = indianHub ? [indianHub.lng, indianHub.lat] : [78, 22];
+        const destScreenPt = projection(p1);
+        
+        selected.secondaryHavens.forEach(s => {
+          const p2 = [s.lng, s.lat];
+          const interpolator = d3.geoInterpolate(p1, p2);
+          const branchPts = [];
+          const steps = 16;
+          for (let step = 0; step <= steps; step++) {
+            const coord = projection(interpolator(step / steps));
+            if (coord) branchPts.push(coord);
+          }
+          const isActive = (activeHavenId === s.id);
+          if (branchPts.length >= 2) {
+            dispersalLayer.append('path')
+              .attr('class', 'dispersal-route-casing')
+              .attr('d', lineGen(branchPts));
+
+            dispersalLayer.append('path')
+              .attr('class', `dispersal-route ${isActive ? 'active' : ''}`)
+              .attr('stroke', isActive ? '#dc9b35' : (selected.color || C[selected.t] || '#146c63'))
+              .attr('d', lineGen(branchPts))
+              .on('mouseenter', (ev) => {
+                const tt = document.getElementById('tooltip');
+                tt.style.display = 'block';
+                tt.innerHTML = `<b>${s.icon || '📍'} Dotted Connection to ${s.name}</b><br><span style="font-size:11px;color:#dc9b35">${s.state} · Secondary Sanctuary</span><br><span style="font-size:10px;opacity:0.85">Click to focus haven</span>`;
+                tt.style.left = (ev.offsetX + 12) + 'px';
+                tt.style.top = (ev.offsetY + 12) + 'px';
+              })
+              .on('mouseleave', () => {
+                document.getElementById('tooltip').style.display = 'none';
+              })
+              .on('click', (ev) => {
+                ev.stopPropagation();
+                spotlightHaven(s);
+              });
+          }
+
+          // Secondary haven node - distinct micro-dot
+          const sPt = projection(p2);
+          if (sPt) {
+            dispersalLayer.append('circle')
+              .attr('class', `haven-node ${isActive ? 'active' : ''}`)
+              .attr('cx', sPt[0])
+              .attr('cy', sPt[1])
+              .attr('r', isActive ? 3.6 : 2.4)
+              .attr('fill', isActive ? '#dc9b35' : (selected.color || C[selected.t] || '#146c63'))
+              .on('mouseenter', (ev) => {
+                const tt = document.getElementById('tooltip');
+                tt.style.display = 'block';
+                tt.innerHTML = `<b>${s.icon || '📍'} ${s.name}</b><br><span style="font-size:11px;color:#dc9b35">${s.state}</span><br><span style="font-size:10px;opacity:0.85">${s.type || 'Secondary Wintering Haven'}</span><br><span style="font-size:9px;color:#78b79b">Click to view details</span>`;
+                tt.style.left = (ev.offsetX + 12) + 'px';
+                tt.style.top = (ev.offsetY + 12) + 'px';
+              })
+              .on('mouseleave', () => {
+                document.getElementById('tooltip').style.display = 'none';
+              })
+              .on('click', (ev) => {
+                ev.stopPropagation();
+                spotlightHaven(s);
+              });
+
+            if (isActive) {
+              dispersalLayer.append('circle')
+                .attr('class', 'haven-spotlight-ring')
+                .attr('cx', sPt[0])
+                .attr('cy', sPt[1])
+                .attr('r', 6.0);
+
+              dispersalLayer.append('text')
+                .attr('class', 'label')
+                .attr('data-base-x', sPt[0])
+                .attr('data-base-y', sPt[1])
+                .attr('data-dx', 8)
+                .attr('data-dy', 3.5)
+                .text(s.name.split('(')[0].trim());
+            }
+          }
+        });
+
+        // Pulsing ring around primary arrival haven
+        if (destScreenPt) {
+          dispersalLayer.append('circle')
+            .attr('class', 'primary-gateway-ring')
+            .attr('cx', destScreenPt[0])
+            .attr('cy', destScreenPt[1])
+            .attr('r', 6.5);
+        }
+      }
+
+      // Dedicated layer for flock dots
+      // (Rendered after India point)
+    }
+
+    // Fixed India center point
+    const india = projection([78, 22]);
+    if (india) {
+      content.append('circle')
+        .attr('class', 'origin-dot')
+        .attr('cx', india[0])
+        .attr('cy', india[1])
+        .attr('r', 3.5);
+      content.append('text')
+        .attr('class', 'label')
+        .attr('data-base-x', india[0])
+        .attr('data-base-y', india[1])
+        .attr('data-dx', 10)
+        .attr('data-dy', 3.5)
+        .text('India');
+    }
+
+    // -------------------------------------------------------------
+    // FLOCK LAYER: ALL 126 BIRDS ANIMATED TOGETHER ACROSS MONTHS
+    // -------------------------------------------------------------
+    const flockLayer = content.append('g').attr('class', 'flock-layer');
+
+    // 1. Draw pulse beacon for selected bird
+    if (selected) {
+      const selIdx = getBirdMonthPathIndex(selected, month);
+      selected._animIdx = selIdx;
+      const selPos = projection(selected.p[selIdx]);
+      if (selPos) {
+        flockLayer.append('circle')
+          .attr('class', 'dot-pulse')
+          .attr('fill', 'none')
+          .attr('stroke', selected.color || C[selected.t] || '#146c63')
+          .attr('stroke-width', 1.8)
+          .attr('cx', selPos[0])
+          .attr('cy', selPos[1])
+          .attr('r', 9.5)
+          .attr('opacity', 0.55);
+      }
+    }
+
+    // 2. Draw dots for all background / flock birds
+    birds.forEach(b => {
+      if (b === selected) return;
+      if (type !== 'All' && b.t !== type) return;
+      const pIdx = getBirdMonthPathIndex(b, month);
+      b._animIdx = pIdx;
+      const pt = projection(b.p[pIdx]);
+      if (!pt) return;
+      const baseOpacity = selected ? 0.18 : 0.72;
+      const baseR = selected ? 1.8 : 2.6;
+
+      flockLayer.append('circle')
+        .attr('class', `bird-dot ${selected ? 'dimmed' : 'flock-member'}`)
+        .attr('data-id', b.id)
+        .attr('fill', b.color || C[b.t] || '#146c63')
+        .attr('cx', pt[0])
+        .attr('cy', pt[1])
+        .attr('r', baseR)
+        .style('opacity', baseOpacity)
+        .style('stroke', '#ffffff')
+        .style('stroke-width', selected ? '0.5px' : '0.7px')
+        .on('mouseenter', (ev) => {
+          const phase = b.ph && b.ph[month] ? b.ph[month] : 'In transit';
+          const tt = document.getElementById('tooltip');
+          tt.style.display = 'block';
+          tt.innerHTML = `<b>${b.n}</b><br><span style="font-size:11px;opacity:0.85">${b.s}</span><br><span style="font-size:10px;color:${b.color}">${b.t}</span> · <span style="font-size:10px;color:#dc9b35">${phase}</span>`;
+          tt.style.left = (ev.offsetX + 12) + 'px';
+          tt.style.top = (ev.offsetY + 12) + 'px';
+          d3.select(ev.currentTarget)
+            .style('opacity', 1.0)
+            .attr('r', 4.8 / Math.pow(currentK || 1, 0.45));
+        })
+        .on('mouseleave', (ev) => {
+          document.getElementById('tooltip').style.display = 'none';
+          d3.select(ev.currentTarget)
+            .style('opacity', baseOpacity)
+            .attr('r', baseR / Math.pow(currentK || 1, 0.45));
+        })
+        .on('click', (ev) => {
+          ev.stopPropagation();
+          selectBird(b);
+        });
+    });
+
+    // 3. Draw focused dot for selected bird on top
+    if (selected) {
+      const selIdx = getBirdMonthPathIndex(selected, month);
+      selected._animIdx = selIdx;
+      const pt = projection(selected.p[selIdx]);
+      if (pt) {
+        flockLayer.append('circle')
+          .attr('class', 'bird-dot focused')
+          .attr('data-id', selected.id)
+          .attr('fill', selected.color || C[selected.t] || '#146c63')
+          .attr('cx', pt[0])
+          .attr('cy', pt[1])
+          .attr('r', 5.2)
+          .style('opacity', 1.0)
+          .style('stroke', '#ffffff')
+          .style('stroke-width', '1.8px')
+          .on('mouseenter', (ev) => {
+            const phase = selected.ph && selected.ph[month] ? selected.ph[month] : 'In transit';
+            const tt = document.getElementById('tooltip');
+            tt.style.display = 'block';
+            tt.innerHTML = `<b>${selected.n}</b><br><span style="font-size:11px;opacity:0.85">${selected.s}</span><br><span style="font-size:10px;color:${selected.color}">${selected.t}</span> · <span style="font-size:10px;color:#dc9b35">${phase}</span>`;
+            tt.style.left = (ev.offsetX + 12) + 'px';
+            tt.style.top = (ev.offsetY + 12) + 'px';
+          })
+          .on('mouseleave', () => {
+            document.getElementById('tooltip').style.display = 'none';
+          });
+      }
+    }
+
+    function applyZoomScales(k) {
+      currentK = k;
+
+      // Focus path width (proportional, refined on zoom)
+      content.selectAll('.route.focus')
+        .style('stroke-width', (3.4 / Math.pow(k, 0.72)) + 'px');
+
+      // Dim background paths
+      content.selectAll('.route.dim')
+        .style('stroke-width', (1.2 / Math.pow(k, 0.88)) + 'px');
+
+      // Flock routes in all-birds view
+      content.selectAll('.route.flock-route')
+        .style('stroke-width', (1.0 / Math.pow(k, 0.75)) + 'px');
+
+      // Labels: dynamically resize to remain compact and crisp (8-10px on screen)
+      const labelScreenSize = Math.max(8.0, Math.min(10.0, 10.0 - (k - 2.0) * 0.25));
+      const localFontSize = labelScreenSize / k;
+      const localHalo = 1.4 / k;
+
+      content.selectAll('.label')
+        .attr('font-size', localFontSize + 'px')
+        .style('font-size', localFontSize + 'px')
+        .attr('stroke-width', localHalo + 'px')
+        .style('stroke-width', localHalo + 'px')
+        .each(function() {
+          const el = d3.select(this);
+          const baseX = +el.attr('data-base-x');
+          const baseY = +el.attr('data-base-y');
+          const dx = +el.attr('data-dx') || 6;
+          const dy = +el.attr('data-dy') || -6;
+          if (!isNaN(baseX) && !isNaN(baseY)) {
+            el.attr('x', baseX + dx / k).attr('y', baseY + dy / k);
+          }
+        });
+
+      // Focused bird dot & beacon
+      content.selectAll('.bird-dot.focused')
+        .attr('r', 5.2 / Math.pow(k, 0.4))
+        .style('stroke-width', (1.8 / k) + 'px');
+
+      // Dimmed bird dots
+      content.selectAll('.bird-dot.dimmed')
+        .attr('r', 1.8 / Math.pow(k, 0.45))
+        .style('stroke-width', (0.5 / k) + 'px');
+
+      // Flock member dots when no bird is selected
+      content.selectAll('.bird-dot.flock-member')
+        .attr('r', 2.6 / Math.pow(k, 0.45))
+        .style('stroke-width', (0.7 / k) + 'px');
+
+      content.selectAll('.dot-pulse')
+        .attr('r', 9.5 / Math.pow(k, 0.4))
+        .style('stroke-width', (1.5 / k) + 'px');
+
+      content.selectAll('.waypoint-dot')
+        .attr('r', 3.5 / Math.pow(k, 0.4))
+        .style('stroke-width', (1.0 / k) + 'px');
+
+      content.selectAll('.origin-dot')
+        .attr('r', 3.5 / Math.pow(k, 0.4))
+        .style('stroke-width', (1.0 / k) + 'px');
+
+      content.selectAll('.dispersal-route-casing')
+        .style('stroke-width', (5.0 / Math.pow(k, 0.2)) + 'px');
+
+      content.selectAll('.dispersal-route')
+        .style('stroke-width', (3.2 / Math.pow(k, 0.2)) + 'px');
+
+      content.selectAll('.dispersal-route.active')
+        .style('stroke-width', (4.8 / Math.pow(k, 0.2)) + 'px');
+
+      content.selectAll('.haven-node')
+        .attr('r', 3.0 / Math.pow(k, 0.3))
+        .style('stroke-width', (1.0 / k) + 'px');
+
+      content.selectAll('.haven-node.active')
+        .attr('r', 4.5 / Math.pow(k, 0.3))
+        .style('stroke-width', (1.8 / k) + 'px');
+
+      content.selectAll('.haven-spotlight-ring')
+        .attr('r', 7.5 / Math.pow(k, 0.3))
+        .style('stroke-width', (1.6 / k) + 'px');
+
+      content.selectAll('.primary-gateway-ring')
+        .attr('r', 8.0 / Math.pow(k, 0.3))
+        .style('stroke-width', (1.6 / k) + 'px');
+    }
+
+    const home = d3.zoomIdentity.translate(w / 2 - india[0] * 2.35, h / 2 - india[1] * 2.35).scale(2.35);
+    const zoom = d3.zoom().scaleExtent([1.35, 7]).on('zoom', e => {
+      currentTransform = e.transform;
+      content.attr('transform', e.transform);
+      applyZoomScales(e.transform.k);
+    });
+
+    const start = currentTransform || home;
+    svg.call(zoom).call(zoom.transform, start);
+    applyZoomScales(start.k);
+    mapZoom = { svg, zoom, home };
+  }
+
+  function updateFlockPositions(animate = true) {
+    if (!svgContent || !currentProjection) return;
+    const flockLayer = svgContent.select('.flock-layer');
+    if (flockLayer.empty()) return;
+
+    // When inspecting a specific bird, STOP moving all other birds!
+    // Only the selected bird's position and pulse beacon transition along its curved corridor via stopovers.
+    if (selected) {
+      const pulse = flockLayer.select('.dot-pulse');
+      const selDot = flockLayer.select('.bird-dot.focused');
+      const fromIdx = (selected._animIdx !== undefined) ? selected._animIdx : getBirdMonthPathIndex(selected, (month + 11) % 12);
+      const toIdx = getBirdMonthPathIndex(selected, month);
+
+      if (animate && fromIdx !== toIdx) {
+        if (!selDot.empty()) {
+          selDot.transition()
+            .duration(1200)
+            .ease(d3.easeCubicInOut)
+            .attrTween('cx', () => (t) => {
+              const idx = Math.min(selected.p.length - 1, Math.max(0, Math.round(fromIdx + (toIdx - fromIdx) * t)));
+              selected._animIdx = idx;
+              const pt = currentProjection(selected.p[idx]);
+              return pt ? pt[0] : 0;
+            })
+            .attrTween('cy', () => (t) => {
+              const idx = Math.min(selected.p.length - 1, Math.max(0, Math.round(fromIdx + (toIdx - fromIdx) * t)));
+              const pt = currentProjection(selected.p[idx]);
+              return pt ? pt[1] : 0;
+            });
+        }
+        if (!pulse.empty()) {
+          pulse.transition()
+            .duration(1200)
+            .ease(d3.easeCubicInOut)
+            .attrTween('cx', () => (t) => {
+              const idx = Math.min(selected.p.length - 1, Math.max(0, Math.round(fromIdx + (toIdx - fromIdx) * t)));
+              const pt = currentProjection(selected.p[idx]);
+              return pt ? pt[0] : 0;
+            })
+            .attrTween('cy', () => (t) => {
+              const idx = Math.min(selected.p.length - 1, Math.max(0, Math.round(fromIdx + (toIdx - fromIdx) * t)));
+              const pt = currentProjection(selected.p[idx]);
+              return pt ? pt[1] : 0;
+            });
+        }
+      } else {
+        selected._animIdx = toIdx;
+        const pt = currentProjection(selected.p[toIdx]);
+        if (pt) {
+          if (!pulse.empty()) pulse.attr('cx', pt[0]).attr('cy', pt[1]);
+          if (!selDot.empty()) selDot.attr('cx', pt[0]).attr('cy', pt[1]);
+        }
+      }
+      return; // DO NOT move any other birds while observing a specific bird!
+    }
+
+    // When NO bird is selected (Flock Overview): only birds matching current filter animate along their curved routes via stopovers!
+    birds.forEach(b => {
+      if (type !== 'All' && b.t !== type) return;
+      const dot = flockLayer.select(`.bird-dot[data-id="${b.id}"]`);
+      if (dot.empty()) return;
+
+      const fromIdx = (b._animIdx !== undefined) ? b._animIdx : getBirdMonthPathIndex(b, (month + 11) % 12);
+      const toIdx = getBirdMonthPathIndex(b, month);
+
+      if (animate && fromIdx !== toIdx) {
+        dot.transition()
+          .duration(1200)
+          .ease(d3.easeCubicInOut)
+          .attrTween('cx', () => (t) => {
+            const idx = Math.min(b.p.length - 1, Math.max(0, Math.round(fromIdx + (toIdx - fromIdx) * t)));
+            b._animIdx = idx;
+            const pt = currentProjection(b.p[idx]);
+            return pt ? pt[0] : 0;
+          })
+          .attrTween('cy', () => (t) => {
+            const idx = Math.min(b.p.length - 1, Math.max(0, Math.round(fromIdx + (toIdx - fromIdx) * t)));
+            const pt = currentProjection(b.p[idx]);
+            return pt ? pt[1] : 0;
+          });
+      } else {
+        b._animIdx = toIdx;
+        const pt = currentProjection(b.p[toIdx]);
+        if (pt) {
+          dot.attr('cx', pt[0]).attr('cy', pt[1]);
+        }
+      }
+    });
+  }
+
+  let playing = false;
+  let timer;
+
+  function autoplay() {
+    clearInterval(timer);
+    if (playing) {
+      timer = setInterval(() => {
+        month = (month + 1) % 12;
+        renderMonths();
+        renderDetails();
+        if (svgContent && !svgContent.select('.flock-layer').empty()) {
+          updateFlockPositions(true);
+        } else {
+          draw();
+        }
+      }, 1800);
+    }
+    const btn = document.getElementById('play');
+    btn.textContent = playing ? '❚❚ Pause' : '▶ Play';
+    btn.setAttribute('aria-pressed', String(playing));
+  }
+
+  document.getElementById('play').onclick = () => {
+    playing = !playing;
+    autoplay();
+  };
+
+  document.getElementById('zoomIn').onclick = () => mapZoom && mapZoom.svg.transition().duration(180).call(mapZoom.zoom.scaleBy, 1.55);
+  document.getElementById('zoomOut').onclick = () => mapZoom && mapZoom.svg.transition().duration(180).call(mapZoom.zoom.scaleBy, 0.64);
+  document.getElementById('zoomHome').onclick = () => mapZoom && mapZoom.svg.transition().duration(260).call(mapZoom.zoom.transform, mapZoom.home);
+
+  const layoutEl = document.querySelector('.layout');
+  const toggleDetailBtn = document.getElementById('toggleDetail');
+  const closeDetailBtn = document.getElementById('closeDetail');
+
+  function setDetailCollapsed(collapsed) {
+    if (!layoutEl) return;
+    if (collapsed) {
+      layoutEl.classList.add('detail-collapsed');
+      if (toggleDetailBtn) {
+        toggleDetailBtn.classList.remove('active-toggle');
+        toggleDetailBtn.setAttribute('title', 'Show species details');
+        toggleDetailBtn.setAttribute('aria-expanded', 'false');
+      }
+    } else {
+      layoutEl.classList.remove('detail-collapsed');
+      if (toggleDetailBtn) {
+        toggleDetailBtn.classList.add('active-toggle');
+        toggleDetailBtn.setAttribute('title', 'Close species details');
+        toggleDetailBtn.setAttribute('aria-expanded', 'true');
+      }
+    }
+    currentTransform = null;
+    setTimeout(draw, 50);
+  }
+
+  if (closeDetailBtn) {
+    closeDetailBtn.onclick = () => setDetailCollapsed(true);
+  }
+  if (toggleDetailBtn) {
+    toggleDetailBtn.onclick = () => {
+      const isCollapsed = layoutEl.classList.contains('detail-collapsed');
+      setDetailCollapsed(!isCollapsed);
+    };
+  }
+
+  window.addEventListener('resize', draw);
+
+  renderList();
+  renderMonths();
+  renderDetails();
+  load();
+  autoplay();
+  </script>
+</body>
+</html>
