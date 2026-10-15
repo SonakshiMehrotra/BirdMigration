@@ -53,35 +53,6 @@ Every route, haven, and timeline in this project is anchored in open scientific 
 
 The application is completely static (HTML5, Vanilla CSS, and JavaScript). It requires no build tools, compilers, or external backend servers.
 
-### Run Locally
-
-1. Clone or download the repository:
-   ```bash
-   git clone https://github.com/your-username/BirdMigration.git
-   cd BirdMigration
-   ```
-
-2. Start any local HTTP server:
-   ```bash
-   # Using Python 3:
-   python3 -m http.server 8080
-   ```
-
-3. Open your browser and navigate to:
-   ```
-   http://localhost:8080/index.html
-   ```
-
-### Deploy to GitHub Pages (1-Click)
-
-Because the project is 100% client-side:
-1. Push the repository to GitHub.
-2. In your GitHub repository, navigate to **Settings** ➔ **Pages**.
-3. Under **Branch**, select `main` and root (`/`), then click **Save**.
-4. Your interactive atlas will be live at `https://<your-username>.github.io/<repo-name>/`.
-
----
-
 ## 📁 Project Structure
 
 ```
